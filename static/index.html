@@ -532,6 +532,200 @@
             z-index: 100;
         }
         .toast.visible { transform: translateY(0); }
+
+        /* ── Clinical Guidelines Gallery ────────────────────── */
+        .gallery-section {
+            margin-top: 3rem;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .section-badge {
+            display: inline-block;
+            padding: 0.35rem 0.9rem;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+        .section-header h2 {
+            font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 1.5rem;
+        }
+        .gallery-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+        .gallery-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--accent);
+            box-shadow: 0 16px 40px rgba(99, 102, 241, 0.22);
+        }
+        .gallery-img-wrap {
+            position: relative;
+            width: 100%;
+            height: 190px;
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .gallery-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .gallery-card:hover .gallery-img-wrap img {
+            transform: scale(1.06);
+        }
+        .gallery-tag {
+            position: absolute;
+            top: 0.75rem;
+            left: 0.75rem;
+            padding: 0.3rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            backdrop-filter: blur(10px);
+            text-transform: uppercase;
+        }
+        .tag-primary { background: rgba(99,102,241,0.9); color: #fff; }
+        .tag-warning { background: rgba(245,158,11,0.9); color: #fff; }
+        .tag-success { background: rgba(16,185,129,0.9); color: #fff; }
+        .tag-accent  { background: rgba(168,85,247,0.9); color: #fff; }
+
+        .gallery-content {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .gallery-content h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+        }
+        .gallery-content p {
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            flex: 1;
+        }
+        .gallery-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            padding-top: 0.75rem;
+        }
+        .gallery-meta .action-hint {
+            color: var(--accent-light);
+            font-weight: 600;
+        }
+
+        /* ── Lightbox Modal ──────────────────────────────────── */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 15, 30, 0.88);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            padding: 1.5rem;
+        }
+        .lightbox.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .lightbox-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-focus);
+            border-radius: var(--radius);
+            max-width: 820px;
+            width: 100%;
+            overflow: hidden;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+            transform: scale(0.94);
+            transition: transform 0.3s ease;
+        }
+        .lightbox.active .lightbox-content {
+            transform: scale(1);
+        }
+        .lightbox-content img {
+            width: 100%;
+            max-height: 65vh;
+            object-fit: contain;
+            background: #0b1120;
+            display: block;
+        }
+        .lightbox-footer {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+        }
+        .lightbox-caption {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            max-width: 80%;
+            line-height: 1.4;
+        }
+        .lightbox-close {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+        .lightbox-close:hover {
+            background: var(--accent);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -762,9 +956,12 @@
                 </div>
 
                 <div id="resultEmpty" class="result-empty">
-                    <div class="empty-icon">🩺</div>
-                    <p>Fill in the child's details and click <strong>Predict</strong> to see the stunting risk assessment.</p>
-                    <p style="margin-top:0.75rem;font-size:0.78rem;">All fields are optional — missing values are imputed from training data medians.</p>
+                    <div style="width:100%; border-radius:var(--radius-sm); overflow:hidden; margin-bottom:1rem; border:1px solid var(--border); box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+                        <img src="/static/images/healthy-growth-future.png" alt="Healthy Growth Guidance" style="width:100%; height:130px; object-fit:cover; display:block;">
+                    </div>
+                    <div class="empty-icon" style="font-size:1.5rem; margin-bottom:0.35rem;">🩺</div>
+                    <p>Fill in the child's details on the left and click <strong>Predict Stunting Risk</strong>.</p>
+                    <p style="margin-top:0.5rem;font-size:0.78rem;">Calibrated risk scores provide immediate triage priority for frontline health workers.</p>
                 </div>
 
                 <div id="riskResult" class="risk-result">
@@ -837,6 +1034,81 @@
         </div>
 
     </div>
+
+    <!-- ── Clinical & Public Health Visual Guides ────────────────── -->
+    <section class="gallery-section">
+        <div class="section-header">
+            <div class="section-badge">Pediatric Nutrition Guidelines</div>
+            <h2>Clinical Growth &amp; Nutrition Pathways</h2>
+            <p>Evidence-based public health visual references illustrating linear growth faltering, the first 1,000 days critical window, and point-of-care community triage.</p>
+        </div>
+
+        <div class="gallery-grid">
+            <!-- Card 1: Healthy vs Stunted -->
+            <div class="gallery-card" onclick="openLightbox('/static/images/healthy-vs-stunted.png', 'Healthy Growth vs. Stunted Growth: Visual comparison illustrating linear growth failure (HAZ < -2 SD) versus age-appropriate linear growth.')">
+                <div class="gallery-img-wrap">
+                    <img src="/static/images/healthy-vs-stunted.png" alt="Healthy Growth vs Stunted Growth" loading="lazy">
+                    <span class="gallery-tag tag-warning">Linear Growth Trajectory</span>
+                </div>
+                <div class="gallery-content">
+                    <h3>Healthy Growth vs. Stunting</h3>
+                    <p>Linear growth failure reflects cumulative maternal-child undernutrition, micronutrient deficiencies, and recurrent subclinical infections during early life.</p>
+                    <div class="gallery-meta">
+                        <span>WHO Child Growth Standards</span>
+                        <span class="action-hint">View full size ↗</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Nourishing Care -->
+            <div class="gallery-card" onclick="openLightbox('/static/images/nourishing-growth-care.png', 'Nourishing Care: Essential maternal and infant feeding, dietary diversity, and clean water access.')">
+                <div class="gallery-img-wrap">
+                    <img src="/static/images/nourishing-growth-care.png" alt="Nourishing Healthy Growth and Care" loading="lazy">
+                    <span class="gallery-tag tag-primary">1,000 Days Window</span>
+                </div>
+                <div class="gallery-content">
+                    <h3>Nourishing Care &amp; Maternal Health</h3>
+                    <p>Adequate maternal BMI, 6 months of exclusive breastfeeding, and nutrient-dense complementary feeding prevent irreversible physical and cognitive faltering.</p>
+                    <div class="gallery-meta">
+                        <span>UNICEF Malnutrition Framework</span>
+                        <span class="action-hint">View full size ↗</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Brighter Future -->
+            <div class="gallery-card" onclick="openLightbox('/static/images/healthy-growth-future.png', 'Healthy Growth, Brighter Future: Unlocking children\'s full cognitive development and adult economic potential.')">
+                <div class="gallery-img-wrap">
+                    <img src="/static/images/healthy-growth-future.png" alt="Healthy Growth, Brighter Future" loading="lazy">
+                    <span class="gallery-tag tag-success">Cognitive Development</span>
+                </div>
+                <div class="gallery-content">
+                    <h3>Unlocking Children's Potential</h3>
+                    <p>Early screening and timely intervention preserve developmental milestones, school readiness, and long-term adult economic productivity.</p>
+                    <div class="gallery-meta">
+                        <span>Long-Term Health Outcomes</span>
+                        <span class="action-hint">View full size ↗</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: Nutrition Support Scene -->
+            <div class="gallery-card" onclick="openLightbox('/static/images/nutrition-support-scene.png', 'Community Health Screening: Equipping frontline health workers with point-of-care predictive risk tools.')">
+                <div class="gallery-img-wrap">
+                    <img src="/static/images/nutrition-support-scene.png" alt="Community Nutrition Support Scene" loading="lazy">
+                    <span class="gallery-tag tag-accent">Primary Care Triage</span>
+                </div>
+                <div class="gallery-content">
+                    <h3>Point-of-Care CHV Triage</h3>
+                    <p>Empowering Community Health Volunteers (CHVs) and dispensary clinicians with calibrated screening tools to prioritize high-risk children for therapeutic care.</p>
+                    <div class="gallery-meta">
+                        <span>Dispensary &amp; Community Level</span>
+                        <span class="action-hint">View full size ↗</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Footer -->
     <footer class="footer">
@@ -980,7 +1252,41 @@
         toast.classList.add('visible');
         setTimeout(() => toast.classList.remove('visible'), 4000);
     }
+
+    // ── Lightbox Functions ──────────────────────────────────────────────
+    function openLightbox(src, caption) {
+        const lb = document.getElementById('lightbox');
+        const img = document.getElementById('lightboxImg');
+        const cap = document.getElementById('lightboxCaption');
+        img.src = src;
+        cap.textContent = caption;
+        lb.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox(e) {
+        if (!e || e.target.id === 'lightbox' || e.target.classList.contains('lightbox-close')) {
+            const lb = document.getElementById('lightbox');
+            lb.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeLightbox();
+    });
 </script>
+
+<!-- Lightbox Modal -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <div class="lightbox-content">
+        <img id="lightboxImg" src="" alt="Enlarged Clinical Visual">
+        <div class="lightbox-footer">
+            <div class="lightbox-caption" id="lightboxCaption"></div>
+            <button class="lightbox-close" onclick="closeLightbox()">Close ✕</button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
