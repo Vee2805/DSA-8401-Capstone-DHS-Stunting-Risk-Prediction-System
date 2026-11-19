@@ -2,7 +2,7 @@
 """
 DHS Stunting Risk — FastAPI Prediction Service
 ================================================
-DSA 8401 Applied Machine Learning Capstone
+Applied Machine Learning Capstone · MSc Data Science & Analytics · D.Vaati.M
 
 Endpoints
 ---------
