@@ -80,9 +80,12 @@
     \vfill
     
     \begin{tabular}{ll}
-        \textbf{Course:}     & DSA 8401 — Applied Machine Learning \\
-        \textbf{Lecturers:}  & Prof.\ Javier Serrano \& Emmanuel Bundi \\
-        \textbf{Submission:} & November 2026 \\
+        \textbf{Course:}        & DSA 8401 — Applied Machine Learning \\
+        \textbf{Lecturers:}     & Prof.\ Javier Serrano \& Emmanuel Bundi \\
+        \textbf{Submission:}    & November 2026 \\
+        \textbf{GitHub Repo:}   & \url{https://github.com/Vee2805/DSA-8401-Capstone-DHS-Stunting-Risk-Prediction-System} \\
+        \textbf{Live Cloud App:}& \url{https://stunting-risk-api.onrender.com/} \\
+        \textbf{API Swagger UI:}& \url{https://stunting-risk-api.onrender.com/docs} \\
     \end{tabular}
     
     \vspace{1cm}
@@ -575,6 +578,35 @@ docker-compose up --build    # Builds image and starts API on port 8000
 \end{lstlisting}
 
 A \texttt{render.yaml} blueprint enables zero-configuration deployment to Render.com cloud infrastructure.
+
+\subsection{Live Cloud Deployment}
+
+The clinical screening web application and prediction API are deployed to production cloud infrastructure on Render and are publicly accessible:
+
+\begin{itemize}
+    \item \textbf{Clinical Screening Web Application:} \url{https://stunting-risk-api.onrender.com/}
+    \item \textbf{Interactive Swagger UI API Documentation:} \url{https://stunting-risk-api.onrender.com/docs}
+    \item \textbf{Health Check \& Readiness Probe:} \url{https://stunting-risk-api.onrender.com/health}
+    \item \textbf{Live Inference POST Endpoint:} \url{https://stunting-risk-api.onrender.com/predict}
+\end{itemize}
+
+Reviewers and examiners can query the live cloud endpoint using \texttt{curl} or any standard HTTP client:
+
+\begin{lstlisting}[language=bash]
+# Query the live deployed cloud API
+curl -X POST https://stunting-risk-api.onrender.com/predict \
+  -H "Content-Type: application/json" \
+  -d '{"child_age_months": 24, "county": "Turkana", "wealth_quintile": "poorest"}'
+\end{lstlisting}
+
+\begin{lstlisting}
+{
+  "stunting_risk": 0.3344,
+  "risk_label": "Low Risk",
+  "prediction": 0,
+  "model_name": "Gradient Boosting"
+}
+\end{lstlisting}
 
 
 % ══════════════════════════════════════════════════════════════════════════

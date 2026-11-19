@@ -3,6 +3,14 @@
 **DSA 8401 — Applied Machine Learning Capstone Project**
 *MSc Data Science & Analytics · iLabAfrica · Strathmore University*
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7?style=for-the-badge&logo=render)](https://stunting-risk-api.onrender.com/)
+[![Swagger Docs](https://img.shields.io/badge/API%20Docs-Swagger%20UI-85EA2D?style=for-the-badge&logo=swagger)](https://stunting-risk-api.onrender.com/docs)
+[![Health Probe](https://img.shields.io/badge/Service-Healthy-brightgreen?style=for-the-badge)](https://stunting-risk-api.onrender.com/health)
+
+> **Live Web Application:** [https://stunting-risk-api.onrender.com/](https://stunting-risk-api.onrender.com/)  
+> **Interactive Swagger UI:** [https://stunting-risk-api.onrender.com/docs](https://stunting-risk-api.onrender.com/docs)  
+> **Health Check:** [https://stunting-risk-api.onrender.com/health](https://stunting-risk-api.onrender.com/health)
+
 ---
 
 ## Problem Statement
