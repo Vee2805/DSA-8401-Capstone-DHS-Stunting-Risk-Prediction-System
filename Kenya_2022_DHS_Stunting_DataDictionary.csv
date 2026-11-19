@@ -1,0 +1,50 @@
+variable,type,description
+caseid,string,Mother case ID (DHS)
+bidx,int,Birth index — which child of the mother
+cluster_id,int,DHS cluster / PSU number (v001) — joins to GPS
+haz,float,Height-for-age z-score (hw70/100)
+stunted,binary,1 if haz < -2 SD (primary outcome)
+severely_stunted,binary,1 if haz < -3 SD
+waz,float,Weight-for-age z-score (hw71/100)
+whz,float,Weight-for-height z-score (hw72/100)
+underweight,binary,1 if waz < -2 SD
+wasted,binary,1 if whz < -2 SD
+child_sex,string,male / female (from b4)
+child_age_months,int,Child age in months at survey (hw1)
+birth_order,int,Birth order number (bord)
+birth_weight_kg,float,Birth weight in kg (m19/1000); NaN if not measured
+birth_size,int,Mother-reported size at birth: 1=very large .. 5=very small (m18)
+caesarean,binary,1 if delivered by C-section (m17)
+mother_age,int,Mother's current age in years (v012)
+mother_education_level,string,none / primary / secondary / higher (v106)
+mother_education_code,int,Raw v106 code (0..3)
+mother_education_years,int,Single years of education (v133)
+mother_height_cm,float,Mother's height in cm (v438/10)
+mother_bmi,float,Mother's body mass index (v445/100)
+total_children_born,int,Total children ever born (v201)
+currently_pregnant,binary,1 if mother pregnant at survey (v213)
+currently_breastfed,binary,1 if child currently breastfeeding (v404)
+months_breastfed,int,Months child has been breastfed (m5)
+preceding_birth_interval_m,int,Months since the previous birth (b11)
+short_birth_interval,binary,1 if preceding birth interval < 24 months
+had_diarrhoea_recent,binary,1 if child had diarrhoea in past 2 weeks (v409)
+wealth_quintile,string,poorest..richest (v190)
+wealth_quintile_code,int,Raw v190 code (1..5)
+wealth_score,float,Continuous wealth index factor score (v191/100000)
+improved_water,binary,JMP improved drinking-water source (derived from v113)
+water_source_code,int,Raw DHS water source code (v113)
+time_to_water_min,int,Minutes to water source (v115)
+improved_sanitation,binary,JMP improved sanitation facility (derived from v116)
+toilet_type_code,int,Raw DHS toilet facility code (v116)
+has_electricity,binary,Household has electricity (v119)
+cooking_fuel_code,int,Raw DHS cooking fuel code (v161)
+county,string,Kenya county name from GPS file (ADM1NAME)
+county_code,int,DHS v024 region/county code (1..47)
+urban_rural,string,urban / rural (v025)
+dhs_region,string,DHS malaria endemic region grouping (DHSREGNA)
+latitude,float,Cluster centroid latitude (jittered by DHS for privacy)
+longitude,float,Cluster centroid longitude (jittered by DHS for privacy)
+altitude_m,float,Cluster elevation in metres (ALT_DEM)
+sample_weight,float,Individual sample weight (v005/1e6) — use for population estimates
+psu,int,Primary sampling unit (v021) — for complex-survey SEs
+stratum,int,Survey stratum (v022) — for complex-survey SEs

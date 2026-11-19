@@ -1,0 +1,664 @@
+% ═══════════════════════════════════════════════════════════════════════════
+%  DSA 8401 — Applied Machine Learning Capstone Report
+%  Childhood Stunting Risk Prediction Using Kenya DHS 2022 Data
+%  MSc Data Science & Analytics · iLabAfrica · Strathmore University
+% ═══════════════════════════════════════════════════════════════════════════
+\documentclass[12pt, a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{amsmath, amssymb}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{listings}
+\usepackage{url}
+\usepackage[numbers]{natbib}
+
+% ── Page Style ────────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small DSA 8401 — Applied Machine Learning Capstone}
+\fancyhead[R]{\small Strathmore University}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Hyperlink Styling ─────────────────────────────────────────────────────
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    citecolor=blue!60!black,
+    urlcolor=blue!60!black
+}
+
+% ── Code Listing Style ────────────────────────────────────────────────────
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{gray!30},
+    backgroundcolor=\color{gray!5},
+    keywordstyle=\color{blue!70},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red!60!black},
+    showstringspaces=false
+}
+
+% ── Custom Commands ───────────────────────────────────────────────────────
+\newcommand{\figpath}{../figures}
+
+% ══════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ── Title Page ────────────────────────────────────────────────────────────
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Large\textbf{DSA 8401 — Applied Machine Learning}}\\[0.5cm]
+    {\large MSc Data Science \& Analytics}\\[0.3cm]
+    {\large iLabAfrica · Strathmore University}\\[2cm]
+    
+    {\Huge\textbf{Childhood Stunting Risk Prediction}}\\[0.4cm]
+    {\Huge\textbf{Using Kenya DHS 2022 Data}}\\[2cm]
+    
+    {\Large\textbf{Capstone Project — Final Report}}\\[2cm]
+    
+    \vfill
+    
+    \begin{tabular}{ll}
+        \textbf{Course:}     & DSA 8401 — Applied Machine Learning \\
+        \textbf{Lecturers:}  & Prof.\ Javier Serrano \& Emmanuel Bundi \\
+        \textbf{Submission:} & November 2026 \\
+    \end{tabular}
+    
+    \vspace{1cm}
+\end{titlepage}
+
+% ── Table of Contents ─────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Introduction and Problem Statement}
+% ══════════════════════════════════════════════════════════════════════════
+
+Childhood stunting — defined by the World Health Organization (WHO) as a height-for-age Z-score (HAZ) below $-2.0$ standard deviations from the WHO Child Growth Standards median — is the most prevalent form of undernutrition globally and a key indicator of chronic malnutrition in children under five years of age~\cite{who2006,unicef2023}.
+
+According to the Kenya Demographic and Health Survey (DHS) 2022, approximately \textbf{18.0\%} of Kenyan children under five are stunted, with the prevalence rising above 30\% in arid and semi-arid counties such as West Pokot (33.2\%), Kilifi (35.4\%), and Samburu (30.3\%). Stunting is irreversible after the first 1,000 days of life and is associated with impaired cognitive development, reduced adult economic productivity, and increased susceptibility to chronic disease~\cite{victora2008}.
+
+Despite being preventable through targeted nutrition interventions, the identification of at-risk children remains a significant challenge in resource-constrained primary healthcare settings across Kenya. Community Health Volunteers (CHVs) operating at dispensary and sub-county hospital levels often lack the analytical tools to systematically triage children based on multifactorial risk profiles.
+
+\subsection{Project Objective}
+
+This capstone project builds an \textbf{end-to-end machine learning system} that:
+
+\begin{enumerate}[label=\roman*.]
+    \item Ingests and preprocesses raw DHS 2022 survey data (17,327 child anthropometric records across 47 counties and 1,688 survey clusters);
+    \item Trains, evaluates, and calibrates multiple supervised classification models using \textbf{cluster-aware spatial cross-validation} to prevent geographic data leakage;
+    \item Produces calibrated stunting risk probabilities ($P(\text{stunted}) \in [0, 1]$) with SHAP-based feature attributions for clinical interpretability;
+    \item Serves real-time predictions via a containerised \textbf{FastAPI REST microservice} deployable to cloud infrastructure.
+\end{enumerate}
+
+The system is designed as a \textbf{community health screening decision-support tool} — a frontline health worker inputs a child's vitals and household indicators to receive a calibrated risk score and actionable clinical directives.
+
+\subsection{Real-World Relevance}
+
+This project satisfies the capstone's ``real-world messiness'' requirement in multiple dimensions:
+
+\begin{itemize}
+    \item \textbf{Severe missingness}: 74.8\% of birth weight records and 47.7\% of maternal BMI values are missing — requiring principled imputation within the preprocessing pipeline;
+    \item \textbf{Class imbalance}: Only 18.0\% of children are stunted (positive class prevalence);
+    \item \textbf{Spatial autocorrelation}: Children within the same DHS survey cluster share geographic, environmental, and socio-economic conditions, creating data leakage risks that must be explicitly mitigated;
+    \item \textbf{Survey design complexity}: DHS data is collected via stratified two-stage cluster sampling, requiring appropriate handling of sampling weights and primary sampling units (PSUs).
+\end{itemize}
+
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Data Source and Description}
+% ══════════════════════════════════════════════════════════════════════════
+
+\subsection{Dataset Overview}
+
+The dataset is derived from the \textbf{Kenya 2022 Demographic and Health Survey (KDHS)} child recode file (KR). After applying WHO flagging criteria to remove biologically implausible anthropometric measurements, the analysis-ready dataset comprises:
+
+\begin{table}[H]
+\centering
+\caption{Dataset summary statistics.}
+\label{tab:data-summary}
+\begin{tabular}{lr}
+\toprule
+\textbf{Attribute} & \textbf{Value} \\
+\midrule
+Total child records            & 17,327 \\
+Kenyan counties represented    & 47 (all) \\
+DHS survey clusters (PSUs)     & 1,688 \\
+Original variables             & 49 \\
+Analysis features              & 26 (19 numeric + 7 categorical) \\
+Target variable                & \texttt{stunted} (HAZ $< -2.0$ SD) \\
+Stunting prevalence            & 18.0\% ($n = 3{,}122$) \\
+Severe stunting (HAZ $< -3.0$) & 4.3\% ($n = 751$) \\
+Mean HAZ                       & $-0.89$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Target Variable}
+
+The binary outcome variable \texttt{stunted} is defined per WHO standards:
+\[
+\texttt{stunted}_i = 
+\begin{cases}
+1 & \text{if } \text{HAZ}_i < -2.0 \\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+\subsection{Feature Engineering}
+
+Twenty-six predictive features were selected based on the \textbf{UNICEF Conceptual Framework for Childhood Malnutrition}, spanning four domains:
+
+\begin{enumerate}
+    \item \textbf{Child demographics \& anthropometry} (5): age in months, sex, birth order, birth weight, birth size recall;
+    \item \textbf{Maternal health \& education} (7): age, height, BMI, education level/years, delivery mode, pregnancy status;
+    \item \textbf{Household socio-economics \& WASH} (8): wealth quintile, residence type, county, improved water/sanitation, electricity, water access time, altitude;
+    \item \textbf{Child feeding \& morbidity} (6): breastfeeding status/duration, birth interval, diarrhoeal morbidity.
+\end{enumerate}
+
+Two \textbf{missingness indicator flags} (\texttt{bw\_measured}, \texttt{bmi\_measured}) were engineered to preserve the informative missingness pattern before median imputation, following the principle that the absence of a measurement is itself predictive (e.g., birth weight is more likely to be missing in home deliveries without skilled attendance).
+
+\subsection{Exploratory Data Analysis}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{\figpath/haz_distribution.png}
+    \caption{Distribution of height-for-age Z-scores (HAZ) across the analysis cohort. The dashed line marks the WHO stunting threshold at $-2.0$ SD.}
+    \label{fig:haz-dist}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{\figpath/stunting_by_county.png}
+    \caption{Stunting prevalence by county. Kilifi (35.4\%), West Pokot (33.2\%), and Samburu (30.3\%) show the highest burden.}
+    \label{fig:by-county}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{\figpath/stunting_by_age.png}
+        \caption{Stunting prevalence by child age group.}
+        \label{fig:by-age}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{\figpath/stunting_by_strata.png}
+        \caption{Stunting by sex, residence, and wealth.}
+        \label{fig:by-strata}
+    \end{subfigure}
+    \caption{Stratified stunting prevalence. Males (20.3\%) are more affected than females (15.6\%); rural children (20.6\%) more than urban (12.7\%); poorest quintile (25.6\%) vs.\ richest (7.7\%).}
+    \label{fig:strata-combined}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{\figpath/stunting_by_wash.png}
+    \caption{Stunting prevalence by WASH (Water, Sanitation, and Hygiene) access indicators.}
+    \label{fig:by-wash}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{\figpath/correlation_heatmap.png}
+    \caption{Pairwise Pearson correlation heatmap of numeric features. Notable correlations include mother education years with wealth score ($r = 0.52$) and improved water with improved sanitation ($r = 0.41$).}
+    \label{fig:correlation}
+\end{figure}
+
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Methodology}
+% ══════════════════════════════════════════════════════════════════════════
+
+\subsection{Preprocessing Pipeline}
+
+A scikit-learn \texttt{ColumnTransformer} was constructed to handle the heterogeneous feature set within a single, serialisable pipeline object:
+
+\begin{itemize}
+    \item \textbf{Numeric branch}: \texttt{SimpleImputer(strategy='median')} $\rightarrow$ \texttt{StandardScaler()};
+    \item \textbf{Categorical branch}: \texttt{SimpleImputer(strategy='most\_frequent')} $\rightarrow$ \texttt{OneHotEncoder(handle\_unknown='ignore')}.
+\end{itemize}
+
+Crucially, imputation and scaling are fitted \emph{only on training data} and applied to test data via \texttt{transform()}, preventing information leakage from the test set into the preprocessing statistics.
+
+\subsection{Spatial Leakage Prevention}
+
+DHS survey data exhibits strong spatial autocorrelation — children within the same cluster share environmental, healthcare access, and socio-economic characteristics. A naive random train/test split would allow the model to memorise cluster-level patterns, producing inflated performance estimates that do not generalise to unseen geographic locations.
+
+To prevent this, the train/test split uses \textbf{GroupShuffleSplit} with \texttt{groups=cluster\_id}:
+\[
+\forall\, c \in \{\text{clusters}\}: \quad c \subseteq \mathcal{D}_{\text{train}} \;\oplus\; c \subseteq \mathcal{D}_{\text{test}}
+\]
+
+This ensures all children from a given DHS primary sampling unit (PSU) appear exclusively in either the training or test partition, never both. The split ratio is 80\%/20\% by cluster group.
+
+\subsection{Models Compared}
+
+Five classification models were trained and evaluated under the cluster-aware evaluation framework:
+
+\begin{table}[H]
+\centering
+\caption{Models compared with class-balancing strategies.}
+\label{tab:models}
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Class Balancing} & \textbf{Hyperparameter Tuning} \\
+\midrule
+Logistic Regression         & \texttt{class\_weight='balanced'} & Default \\
+Logistic Regression (GLM)   & Via \texttt{statsmodels}          & Maximum likelihood \\
+Random Forest               & \texttt{class\_weight='balanced'} & \texttt{RandomizedSearchCV} (5 iter) \\
+Gradient Boosting           & —                                 & Fixed: 200 trees, lr=0.05, depth=4 \\
+XGBoost                     & \texttt{scale\_pos\_weight}       & \texttt{RandomizedSearchCV} (5 iter) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Probability Calibration}
+
+Class-balancing strategies (e.g., \texttt{class\_weight='balanced'}) distort the model's native probability estimates, making raw predicted probabilities unreliable as clinical risk scores. To restore meaningful probability calibration, the best-performing model was wrapped in:
+
+\begin{lstlisting}[language=Python]
+CalibratedClassifierCV(base_estimator=best_model,
+                       method='isotonic', cv=5)
+\end{lstlisting}
+
+Isotonic regression was chosen over Platt scaling because it makes no parametric assumptions about the shape of the calibration function, which is appropriate for tree-based ensemble models whose raw probability distributions are typically non-sigmoidal.
+
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Results}
+% ══════════════════════════════════════════════════════════════════════════
+
+\subsection{Model Comparison}
+
+\begin{table}[H]
+\centering
+\caption{Model performance on the held-out cluster-aware test set. All metrics are computed on the spatially-separated test partition. AP = Average Precision. Brier score is lower-is-better.}
+\label{tab:results}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Model} & \textbf{AUC-ROC} & \textbf{AP} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Brier} \\
+\midrule
+Random Forest (Tuned)   & \textbf{0.719} & \textbf{0.344} & 0.295 & 0.557 & 0.386 & 0.193 \\
+Gradient Boosting       & 0.713          & 0.323          & 0.539 & 0.092 & 0.156 & \textbf{0.123} \\
+Logistic Regression     & 0.711          & 0.328          & 0.264 & 0.613 & 0.369 & 0.208 \\
+Logit (statsmodels)     & 0.707          & 0.319          & 0.592 & 0.034 & 0.065 & 0.124 \\
+XGBoost (Tuned)         & 0.704          & 0.322          & 0.287 & 0.606 & 0.389 & 0.210 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Key observations:
+
+\begin{itemize}
+    \item All five models achieve AUC-ROC scores in the range 0.70--0.72, consistent with published DHS-based stunting prediction models in the literature~\cite{fenta2021,rasheed2024};
+    \item \textbf{Gradient Boosting} achieves the best Brier score (0.123) indicating superior probability calibration, which is critical for a clinical screening tool;
+    \item Random Forest achieves the highest AUC-ROC (0.719) and Average Precision (0.344), reflecting better discrimination at a cost of higher Brier score;
+    \item The Gradient Boosting model was selected for deployment due to its superior calibration properties, which are more important than raw discrimination for a risk-scoring clinical tool.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{\figpath/roc_pr_curves.png}
+    \caption{Receiver Operating Characteristic (ROC) and Precision-Recall (PR) curves for all five models on the spatially-separated test set.}
+    \label{fig:roc-pr}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.65\textwidth]{\figpath/confusion_matrix.png}
+    \caption{Confusion matrix for the deployed Gradient Boosting model at the optimal decision threshold.}
+    \label{fig:confusion}
+\end{figure}
+
+\subsection{Probability Calibration}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{\figpath/calibration_plot.png}
+        \caption{Calibration curve (reliability diagram).}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{\figpath/calibration_before_after.png}
+        \caption{Brier score before and after isotonic calibration.}
+    \end{subfigure}
+    \caption{Isotonic calibration aligns predicted probabilities with observed stunting frequencies, ensuring that a prediction of $P = 0.30$ corresponds to approximately 30\% observed prevalence in the bin.}
+    \label{fig:calibration}
+\end{figure}
+
+\subsection{Model Interpretability}
+
+\subsubsection{SHAP Feature Importance}
+
+TreeSHAP~\cite{lundberg2017} was applied to decompose individual predictions into additive feature contributions, enabling both global importance ranking and individual-level clinical explanations.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{\figpath/shap_summary.png}
+    \caption{SHAP beeswarm summary plot. Each dot represents a child. Colour encodes feature value (red = high, blue = low). Horizontal position shows the SHAP contribution to stunting risk.}
+    \label{fig:shap-summary}
+\end{figure}
+
+The top five predictive features identified by SHAP are:
+
+\begin{enumerate}
+    \item \textbf{Child age (months)}: Older children show higher stunting risk, peaking around 18--36 months — consistent with the literature on the ``window of vulnerability'' after weaning;
+    \item \textbf{Mother height (cm)}: Shorter maternal stature is a strong intergenerational predictor of linear growth faltering;
+    \item \textbf{Birth weight (kg)}: Low birth weight ($< 2.5$ kg) substantially elevates stunting probability;
+    \item \textbf{Wealth quintile}: Household socio-economic status modulates access to diverse diets, healthcare, and clean water;
+    \item \textbf{Mother BMI}: Maternal undernutrition predicts offspring linear growth deficits.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{\figpath/shap_force_top_risk.png}
+    \caption{SHAP force plot for a high-risk child from Turkana County. Red bars push the prediction toward stunting; blue bars push toward not-stunted.}
+    \label{fig:shap-force}
+\end{figure}
+
+\subsubsection{Partial Dependence Plots}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{\figpath/pdp_top6.png}
+    \caption{Partial dependence plots for the six most influential features, showing the marginal effect of each feature on the predicted stunting probability while holding all other features at their observed values.}
+    \label{fig:pdp}
+\end{figure}
+
+\subsection{Cost-Benefit Threshold Optimisation}
+
+In a public health screening context, the costs of false negatives (missing a stunted child) and false positives (unnecessary referral) are asymmetric. A stunted child who is missed loses the opportunity for timely therapeutic feeding intervention, with lifelong consequences, whereas a false positive incurs a modest clinical follow-up cost.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{\figpath/cost_benefit_comparison.png}
+    \caption{Cost-benefit analysis across decision thresholds. The optimal screening cut-off minimises total expected cost under a 5:1 false-negative-to-false-positive cost ratio.}
+    \label{fig:cost-benefit}
+\end{figure}
+
+\subsection{Geospatial Prevalence Mapping}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{\figpath/cluster_map_static.png}
+    \caption{Cluster-level stunting prevalence across Kenya. Each point represents a DHS survey cluster, coloured by observed stunting rate. An interactive Leaflet/Folium version (\texttt{figures/stunting\_map.html}) accompanies this report.}
+    \label{fig:geo-map}
+\end{figure}
+
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Technique Justification}
+% ══════════════════════════════════════════════════════════════════════════
+
+\subsection{Why These Methods Were Chosen}
+
+\begin{table}[H]
+\centering
+\caption{Justification for selected modelling techniques.}
+\label{tab:justification}
+\begin{tabular}{p{3.8cm}p{9.5cm}}
+\toprule
+\textbf{Technique} & \textbf{Justification} \\
+\midrule
+Gradient Boosting & Handles mixed numeric/categorical features natively; achieves the best Brier score (probability calibration) for this tabular survey dataset; interpretable via SHAP TreeExplainer. \\
+\addlinespace
+Random Forest & Ensemble baseline resistant to overfitting; \texttt{class\_weight='balanced'} handles 18\% stunting prevalence; serves as comparison for GBM. \\
+\addlinespace
+XGBoost & Industry-standard gradient boosting with native \texttt{scale\_pos\_weight} for class imbalance; provides a third ensemble comparison point. \\
+\addlinespace
+Logistic Regression & Linear baseline for calibration comparison; coefficient interpretation provides domain-familiar odds ratios for public health audiences. \\
+\addlinespace
+Isotonic Calibration & Class-balancing strategies distort the probability scale; isotonic regression restores clinically meaningful risk probabilities without parametric assumptions. \\
+\addlinespace
+SHAP & Model-agnostic interpretability critical for health policy stakeholders who must understand \emph{why} a child is flagged, not just the binary prediction. \\
+\addlinespace
+GroupShuffleSplit & Prevents geographic data leakage across spatially autocorrelated DHS clusters — the single most important methodological guard in this project. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why Other Methods Were Ruled Out}
+
+\begin{table}[H]
+\centering
+\caption{Techniques considered and reasons for exclusion.}
+\label{tab:exclusions}
+\begin{tabular}{p{3.8cm}p{9.5cm}}
+\toprule
+\textbf{Technique} & \textbf{Reason for Exclusion} \\
+\midrule
+Deep Learning (MLP, CNN, RNN) & Tabular data with 17K rows and 26 features — gradient boosting consistently outperforms deep learning on structured data at this scale (Grinsztajn et al., 2022). No sequential, image, or text modality to exploit. \\
+\addlinespace
+SVM & Scales poorly ($O(n^2)$ kernel matrix); offers no native probability calibration; gradient boosting dominates SVMs on mixed-type tabular data. \\
+\addlinespace
+LightGBM & Functionally equivalent to XGBoost at this dataset size. XGBoost was chosen for its wider deployment ecosystem support and community documentation. \\
+\addlinespace
+K-Means / DBSCAN & Unsupervised clustering methods do not directly predict a supervised binary outcome. The problem is classification, not segmentation. \\
+\addlinespace
+LLMs / Transformers & No unstructured text data exists in this project. All features are structured survey responses. \\
+\addlinespace
+Time-series models & DHS is cross-sectional (single time point per child). No temporal sequence is available to exploit. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{System Architecture and Deployment}
+% ══════════════════════════════════════════════════════════════════════════
+
+\subsection{Repository Structure}
+
+\begin{lstlisting}
+STUNTING GROWTH/
+|-- README.md                            Project overview and setup
+|-- AI_USE.md                            AI assistance disclosure
+|-- requirements.txt                     Python dependencies
+|-- Dockerfile                           Container image definition
+|-- docker-compose.yml                   Container orchestration
+|-- render.yaml                          Render.com cloud deployment
+|
+|-- Kenya_2022_DHS_Stunting_AnalysisReady.csv   Source data (17,327 records)
+|-- Kenya_2022_DHS_Stunting_DataDictionary.csv  Variable definitions
+|-- DHS_Stunting_Cleaning_and_EDA.ipynb         Full EDA & modelling notebook
+|
+|-- src/
+|   |-- train.py                         Reproducible training pipeline
+|   |-- predict.py                       Inference module
+|
+|-- api/
+|   |-- main.py                          FastAPI prediction service
+|
+|-- models/
+|   |-- preprocessor.joblib              Fitted ColumnTransformer
+|   |-- ml_model.joblib                  Calibrated Gradient Boosting
+|   |-- logit_model.joblib               Econometric logit (statsmodels)
+|   |-- feature_schema.json              Feature names, types, medians
+|
+|-- static/
+|   |-- index.html                       Clinical screening web portal
+|
+|-- figures/                             17 publication-quality figures
+|-- report/                              This report
+\end{lstlisting}
+
+\subsection{Reproducible Training Pipeline}
+
+The scripted pipeline (\texttt{src/train.py}) can be executed from scratch by a reviewer:
+
+\begin{lstlisting}[language=bash]
+# Install dependencies
+pip install -r requirements.txt
+
+# Train from scratch (reproduces all artifacts)
+python src/train.py --data Kenya_2022_DHS_Stunting_AnalysisReady.csv --seed 42
+
+# Artifacts saved to models/
+\end{lstlisting}
+
+The pipeline performs: data loading $\rightarrow$ missingness indicator engineering $\rightarrow$ GroupShuffleSplit by cluster $\rightarrow$ ColumnTransformer fitting $\rightarrow$ four-model training and comparison $\rightarrow$ isotonic calibration $\rightarrow$ joblib serialisation.
+
+\subsection{FastAPI Prediction Service}
+
+The inference layer (\texttt{api/main.py}) exposes the trained model via a stateless REST API with strict Pydantic input validation:
+
+\begin{table}[H]
+\centering
+\caption{API endpoint specification.}
+\label{tab:api}
+\begin{tabular}{llp{7.5cm}}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Description} \\
+\midrule
+\texttt{GET}  & \texttt{/}             & Clinical screening web portal \\
+\texttt{GET}  & \texttt{/health}       & Readiness probe (model loaded check) \\
+\texttt{GET}  & \texttt{/schema}       & Feature schema (accepted inputs) \\
+\texttt{GET}  & \texttt{/docs}         & Interactive Swagger UI documentation \\
+\texttt{POST} & \texttt{/predict}      & Single-child stunting risk prediction \\
+\texttt{POST} & \texttt{/predict/batch} & Batch predictions (up to 1,000 records) \\
+\texttt{GET}  & \texttt{/api/stats}    & National and county-level DHS statistics \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Example prediction request and response:}
+
+\begin{lstlisting}[language=bash]
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"child_age_months": 24, "child_sex": "male",
+       "county": "Turkana", "wealth_quintile": "poorest",
+       "urban_rural": "rural"}'
+\end{lstlisting}
+
+\begin{lstlisting}
+{
+  "stunting_risk": 0.3344,
+  "risk_label": "Low Risk",
+  "prediction": 0,
+  "model_name": "Gradient Boosting"
+}
+\end{lstlisting}
+
+All fields are optional — missing values are imputed using training-set medians (numeric) or modes (categorical) stored in \texttt{feature\_schema.json}.
+
+\subsection{Containerisation}
+
+The service is containerised via a production \texttt{Dockerfile} (Python 3.11-slim base image) with health checks and a \texttt{docker-compose.yml} for single-command orchestration:
+
+\begin{lstlisting}[language=bash]
+docker-compose up --build    # Builds image and starts API on port 8000
+\end{lstlisting}
+
+A \texttt{render.yaml} blueprint enables zero-configuration deployment to Render.com cloud infrastructure.
+
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Limitations}
+% ══════════════════════════════════════════════════════════════════════════
+
+\begin{enumerate}
+    \item \textbf{Cross-sectional design}: The DHS captures a single time point — the model cannot predict stunting trajectories or recovery dynamics over time. Longitudinal growth monitoring data would enable more powerful temporal models.
+    
+    \item \textbf{AUC ceiling ($\approx 0.72$)}: Stunting is multifactorial with many unmeasured causes (genetics, micronutrient deficiencies, subclinical infections, food preparation practices). An AUC of $\sim$0.72 is consistent with published DHS-based stunting models and reflects inherent outcome noise, not model inadequacy.
+    
+    \item \textbf{Survey weight handling}: While DHS sample weights (\texttt{sample\_weight}) are incorporated during model training via the \texttt{sample\_weight} parameter, SHAP feature attributions are computed on unweighted observations. This may introduce minor discrepancies in population-representative interpretation.
+    
+    \item \textbf{Geographic generalisability}: The model is trained exclusively on Kenya DHS 2022 data and may not transfer to other countries, time periods, or survey instruments without recalibration.
+    
+    \item \textbf{Severe missingness}: 74.8\% of birth weight values are missing (imputed with median). Although missingness-indicator flags partially mitigate bias, the imputed values are approximations.
+    
+    \item \textbf{Missing dietary data}: Individual Dietary Diversity Scores (IDDS), a known predictor of stunting, are not captured in the standard DHS child recode file and therefore cannot be modelled.
+    
+    \item \textbf{Screening tool, not diagnostic}: The system is designed as an \emph{early-warning screening and prioritisation} tool for community health workers. It is \textbf{not} a diagnostic device and should not replace clinical anthropometric assessment by qualified health professionals.
+\end{enumerate}
+
+
+% ══════════════════════════════════════════════════════════════════════════
+\section{Conclusion}
+% ══════════════════════════════════════════════════════════════════════════
+
+This project delivers a complete, end-to-end machine learning system for childhood stunting risk prediction using Kenya's DHS 2022 survey data. The system addresses the capstone's core requirements:
+
+\begin{itemize}
+    \item A \textbf{reproducible, scripted ML pipeline} (\texttt{src/train.py}) that can be executed from scratch by a reviewer, producing all model artifacts;
+    \item A \textbf{containerised FastAPI REST service} serving calibrated predictions with Swagger documentation, health probes, and cloud deployment configuration;
+    \item \textbf{Rigorous evaluation} using cluster-aware spatial cross-validation that prevents geographic leakage — a methodological safeguard often overlooked in DHS-based machine learning studies;
+    \item \textbf{Clinical interpretability} via SHAP feature attributions and probability calibration, transforming a black-box classifier into an actionable screening tool for frontline health workers.
+\end{itemize}
+
+The system demonstrates that relatively modest tabular ML models (Gradient Boosting, AUC $\approx 0.72$), when properly calibrated, spatially validated, and deployed with appropriate clinical governance boundaries, can serve as effective decision-support tools in resource-constrained public health settings. The identification of child age, maternal height, birth weight, and household wealth as the dominant risk factors aligns with established epidemiological evidence and provides actionable targets for county-level nutrition intervention programmes.
+
+
+% ══════════════════════════════════════════════════════════════════════════
+% References
+% ══════════════════════════════════════════════════════════════════════════
+\begin{thebibliography}{9}
+
+\bibitem{who2006}
+World Health Organization.
+\textit{WHO Child Growth Standards: Length/Height-for-Age, Weight-for-Age, Weight-for-Length, Weight-for-Height and Body Mass Index-for-Age}.
+WHO, Geneva, 2006.
+
+\bibitem{unicef2023}
+UNICEF, WHO, World Bank Group.
+\textit{Levels and Trends in Child Malnutrition: Joint Child Malnutrition Estimates 2023 Edition}.
+New York: UNICEF, 2023.
+
+\bibitem{victora2008}
+C.G.~Victora, L.~Adair, C.~Fall, et al.
+``Maternal and child undernutrition: consequences for adult health and human capital.''
+\textit{The Lancet}, 371(9609):340--357, 2008.
+
+\bibitem{fenta2021}
+H.M.~Fenta, D.L.~Workie, A.~Zike, B.~Taye, P.~Swain.
+``Determinants of stunting among under-five years children in Ethiopia from the 2016 Ethiopian demographic and health survey: Application of ordinal logistic regression model using complex sampling designs.''
+\textit{Clinical Epidemiology and Global Health}, 9:31--37, 2021.
+
+\bibitem{rasheed2024}
+F.~Rasheed, A.~Mehmood, M.~Ullah, et al.
+``Machine learning approaches for predicting stunting among under-five children in developing countries: A systematic review.''
+\textit{Nutrition Reviews}, 2024.
+
+\bibitem{lundberg2017}
+S.M.~Lundberg, S.I.~Lee.
+``A unified approach to interpreting model predictions.''
+\textit{Advances in Neural Information Processing Systems}, 30, 2017.
+
+\bibitem{grinsztajn2022}
+L.~Grinsztajn, E.~Oyallon, G.~Varoquaux.
+``Why do tree-based models still outperform deep learning on tabular data?''
+\textit{Advances in Neural Information Processing Systems}, 35, 2022.
+
+\bibitem{knbs2023}
+Kenya National Bureau of Statistics (KNBS), ICF.
+\textit{Kenya Demographic and Health Survey 2022}.
+Nairobi, Kenya: KNBS, and Rockville, Maryland, USA: ICF, 2023.
+
+\end{thebibliography}
+
+\end{document}

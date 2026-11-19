@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stunting Risk Screening — Kenya DHS 2022</title>
+    <meta name="description" content="AI-powered childhood stunting risk prediction tool using Kenya 2022 DHS data. Screen children under 5 for chronic malnutrition risk.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ── Reset & Base ───────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --bg-input: rgba(30, 41, 59, 0.6);
+            --border: rgba(99, 102, 241, 0.15);
+            --border-focus: rgba(99, 102, 241, 0.5);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.25);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.2);
+            --warning: #f59e0b;
+            --warning-glow: rgba(245, 158, 11, 0.2);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.2);
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+            --gradient-2: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 4px 24px rgba(0,0,0,0.3);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* ── Animated Background ────────────────────────────── */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image:
+                radial-gradient(ellipse 80% 60% at 50% -20%, rgba(99,102,241,0.12), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,0.08), transparent),
+                radial-gradient(ellipse 50% 30% at 10% 60%, rgba(14,165,233,0.06), transparent);
+        }
+
+        .bg-grid::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+        }
+
+        /* ── Floating Orbs ──────────────────────────────────── */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .orb-1 { width: 400px; height: 400px; background: rgba(99,102,241,0.15); top: -100px; right: -100px; animation-delay: 0s; }
+        .orb-2 { width: 300px; height: 300px; background: rgba(139,92,246,0.12); bottom: -50px; left: -50px; animation-delay: -7s; }
+        .orb-3 { width: 200px; height: 200px; background: rgba(14,165,233,0.1); top: 50%; left: 50%; animation-delay: -14s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+        }
+
+        /* ── Layout ─────────────────────────────────────────── */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+
+        /* ── Header ─────────────────────────────────────────── */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            background: var(--accent-glow);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-light);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+        .header-badge .dot {
+            width: 6px; height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        /* ── Stats Bar ──────────────────────────────────────── */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            transition: var(--transition);
+        }
+        .stat-card:hover {
+            border-color: var(--border-focus);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(99,102,241,0.1);
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-light);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+
+        /* ── Main Grid ──────────────────────────────────────── */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2rem;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── Glass Card ─────────────────────────────────────── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .card-title .icon {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--accent-glow);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        /* ── Form ───────────────────────────────────────────── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-section-title {
+            grid-column: 1 / -1;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-light);
+            padding: 0.75rem 0 0.25rem;
+            border-top: 1px solid var(--border);
+            margin-top: 0.5rem;
+        }
+        .form-section-title:first-child {
+            border-top: none;
+            margin-top: 0;
+            padding-top: 0;
+        }
+
+        label {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        input, select {
+            padding: 0.6rem 0.85rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: var(--transition);
+        }
+        input:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        input::placeholder { color: var(--text-muted); }
+        select { cursor: pointer; }
+        select option { background: var(--bg-secondary); color: var(--text-primary); }
+
+        /* ── Predict Button ─────────────────────────────────── */
+        .btn-predict {
+            grid-column: 1 / -1;
+            margin-top: 0.5rem;
+            padding: 0.85rem 2rem;
+            background: var(--gradient-1);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-predict::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+            transform: translateX(-100%);
+            transition: transform 0.5s;
+        }
+        .btn-predict:hover::before { transform: translateX(100%); }
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(99,102,241,0.35);
+        }
+        .btn-predict:active { transform: translateY(0); }
+        .btn-predict:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-predict .spinner {
+            display: none;
+            width: 20px; height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+        }
+        .btn-predict.loading .spinner { display: inline-block; }
+        .btn-predict.loading .btn-text { opacity: 0.8; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Result Panel ───────────────────────────────────── */
+        .result-panel {
+            position: sticky;
+            top: 2rem;
+        }
+
+        .result-empty {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+        .result-empty .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.4;
+        }
+
+        /* ── Risk Gauge ─────────────────────────────────────── */
+        .risk-result {
+            display: none;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .risk-result.visible { display: block; }
+
+        .risk-gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .risk-gauge {
+            position: relative;
+            width: 200px;
+            height: 100px;
+            margin-bottom: 0.5rem;
+        }
+
+        .risk-gauge svg {
+            width: 200px;
+            height: 110px;
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: rgba(100,116,139,0.15);
+            stroke-width: 12;
+            stroke-linecap: round;
+        }
+        .gauge-fill {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1),
+                        stroke 0.5s ease;
+        }
+
+        .risk-percentage {
+            font-size: 2.5rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            transition: color 0.5s ease;
+        }
+        .risk-label-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 0.35rem 1rem;
+            border-radius: 100px;
+            display: inline-block;
+            margin-top: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .risk-low .risk-percentage { color: var(--success); }
+        .risk-low .gauge-fill { stroke: var(--success); }
+        .risk-low .risk-label-text { background: var(--success-glow); color: var(--success); }
+
+        .risk-moderate .risk-percentage { color: var(--warning); }
+        .risk-moderate .gauge-fill { stroke: var(--warning); }
+        .risk-moderate .risk-label-text { background: var(--warning-glow); color: var(--warning); }
+
+        .risk-high .risk-percentage { color: var(--danger); }
+        .risk-high .gauge-fill { stroke: var(--danger); }
+        .risk-high .risk-label-text { background: var(--danger-glow); color: var(--danger); }
+
+        /* ── Details List ───────────────────────────────────── */
+        .result-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .detail-label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+        .detail-value {
+            font-size: 0.88rem;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── API Info Section ───────────────────────────────── */
+        .api-info {
+            margin-top: 2rem;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .api-endpoint {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1.25rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            margin-bottom: 0.75rem;
+            transition: var(--transition);
+        }
+        .api-endpoint:hover {
+            border-color: var(--border-focus);
+        }
+        .api-method {
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            min-width: 50px;
+            text-align: center;
+        }
+        .method-get { background: rgba(16,185,129,0.15); color: var(--success); }
+        .method-post { background: rgba(99,102,241,0.15); color: var(--accent-light); }
+        .api-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+        .api-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        /* ── Footer ─────────────────────────────────────────── */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            animation: fadeInUp 0.8s ease-out 0.8s both;
+        }
+        .footer a {
+            color: var(--accent-light);
+            text-decoration: none;
+        }
+        .footer a:hover { text-decoration: underline; }
+
+        /* ── Animations ─────────────────────────────────────── */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Error Toast ────────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--danger);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 0.88rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(239,68,68,0.2);
+            transform: translateY(120%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+        }
+        .toast.visible { transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="container">
+
+    <!-- ── Header ──────────────────────────────────────── -->
+    <header class="header">
+        <div class="header-badge">
+            <span class="dot"></span>
+            Model Active · Gradient Boosting (Calibrated)
+        </div>
+        <h1>Stunting Risk Screening</h1>
+        <p>AI-powered childhood stunting risk prediction using Kenya 2022 DHS survey data — 17,327 child records across 47 counties</p>
+    </header>
+
+    <!-- ── Stats ───────────────────────────────────────── -->
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-value">17,327</div>
+            <div class="stat-label">Training Records</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">47</div>
+            <div class="stat-label">Counties Covered</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">26</div>
+            <div class="stat-label">Risk Features</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">0.72</div>
+            <div class="stat-label">Model AUC</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">~1,700</div>
+            <div class="stat-label">DHS Clusters</div>
+        </div>
+    </div>
+
+    <!-- ── Main ────────────────────────────────────────── -->
+    <div class="main-grid">
+
+        <!-- Form Card -->
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">📋</span>
+                Child Health Assessment
+            </div>
+            <form id="predictionForm" class="form-grid" autocomplete="off">
+
+                <div class="form-section-title">👶 Child Information</div>
+
+                <div class="form-group">
+                    <label for="child_age_months">Age (months)</label>
+                    <input type="number" id="child_age_months" name="child_age_months" min="0" max="59" step="1" placeholder="0–59">
+                </div>
+                <div class="form-group">
+                    <label for="child_sex">Sex</label>
+                    <select id="child_sex" name="child_sex">
+                        <option value="">— Select —</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="birth_order">Birth Order</label>
+                    <input type="number" id="birth_order" name="birth_order" min="1" step="1" placeholder="e.g. 3">
+                </div>
+                <div class="form-group">
+                    <label for="birth_weight_kg">Birth Weight (kg)</label>
+                    <input type="number" id="birth_weight_kg" name="birth_weight_kg" min="0.5" max="6" step="0.1" placeholder="e.g. 3.2">
+                </div>
+                <div class="form-group">
+                    <label for="birth_size">Birth Size (1–5)</label>
+                    <select id="birth_size" name="birth_size">
+                        <option value="">— Select —</option>
+                        <option value="1">1 – Very small</option>
+                        <option value="2">2 – Small</option>
+                        <option value="3">3 – Average</option>
+                        <option value="4">4 – Large</option>
+                        <option value="5">5 – Very large</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="caesarean">Delivery Method</label>
+                    <select id="caesarean" name="caesarean">
+                        <option value="">— Select —</option>
+                        <option value="0">Vaginal</option>
+                        <option value="1">Caesarean</option>
+                    </select>
+                </div>
+
+                <div class="form-section-title">🤱 Maternal Factors</div>
+
+                <div class="form-group">
+                    <label for="mother_age">Mother's Age</label>
+                    <input type="number" id="mother_age" name="mother_age" min="15" max="49" step="1" placeholder="15–49">
+                </div>
+                <div class="form-group">
+                    <label for="mother_height_cm">Mother's Height (cm)</label>
+                    <input type="number" id="mother_height_cm" name="mother_height_cm" min="100" max="200" step="0.1" placeholder="e.g. 160">
+                </div>
+                <div class="form-group">
+                    <label for="mother_bmi">Mother's BMI</label>
+                    <input type="number" id="mother_bmi" name="mother_bmi" min="12" max="60" step="0.1" placeholder="e.g. 22.5">
+                </div>
+                <div class="form-group">
+                    <label for="mother_education_level">Education Level</label>
+                    <select id="mother_education_level" name="mother_education_level">
+                        <option value="">— Select —</option>
+                        <option value="none">None</option>
+                        <option value="primary">Primary</option>
+                        <option value="secondary">Secondary</option>
+                        <option value="higher">Higher</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="mother_education_years">Education Years</label>
+                    <input type="number" id="mother_education_years" name="mother_education_years" min="0" max="20" step="1" placeholder="e.g. 8">
+                </div>
+                <div class="form-group">
+                    <label for="preceding_birth_interval_m">Birth Interval (months)</label>
+                    <input type="number" id="preceding_birth_interval_m" name="preceding_birth_interval_m" min="0" step="1" placeholder="Since previous">
+                </div>
+
+                <div class="form-section-title">🏠 Household & Environment</div>
+
+                <div class="form-group">
+                    <label for="wealth_quintile">Wealth Quintile</label>
+                    <select id="wealth_quintile" name="wealth_quintile">
+                        <option value="">— Select —</option>
+                        <option value="poorest">Poorest</option>
+                        <option value="poorer">Poorer</option>
+                        <option value="middle">Middle</option>
+                        <option value="richer">Richer</option>
+                        <option value="richest">Richest</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="urban_rural">Residence</label>
+                    <select id="urban_rural" name="urban_rural">
+                        <option value="">— Select —</option>
+                        <option value="urban">Urban</option>
+                        <option value="rural">Rural</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="county">County</label>
+                    <select id="county" name="county">
+                        <option value="">— Select —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="altitude_m">Altitude (m)</label>
+                    <input type="number" id="altitude_m" name="altitude_m" step="1" placeholder="e.g. 1341">
+                </div>
+                <div class="form-group">
+                    <label for="improved_water">Improved Water</label>
+                    <select id="improved_water" name="improved_water">
+                        <option value="">— Select —</option>
+                        <option value="1">Yes</option>
+                        <option value="0">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="improved_sanitation">Improved Sanitation</label>
+                    <select id="improved_sanitation" name="improved_sanitation">
+                        <option value="">— Select —</option>
+                        <option value="1">Yes</option>
+                        <option value="0">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="has_electricity">Has Electricity</label>
+                    <select id="has_electricity" name="has_electricity">
+                        <option value="">— Select —</option>
+                        <option value="1">Yes</option>
+                        <option value="0">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="time_to_water_min">Time to Water (min)</label>
+                    <input type="number" id="time_to_water_min" name="time_to_water_min" min="0" step="1" placeholder="e.g. 30">
+                </div>
+
+                <div class="form-section-title">🍼 Nutrition & Health</div>
+
+                <div class="form-group">
+                    <label for="currently_breastfed">Currently Breastfed</label>
+                    <select id="currently_breastfed" name="currently_breastfed">
+                        <option value="">— Select —</option>
+                        <option value="1">Yes</option>
+                        <option value="0">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="months_breastfed">Months Breastfed</label>
+                    <input type="number" id="months_breastfed" name="months_breastfed" min="0" step="1" placeholder="Total months">
+                </div>
+                <div class="form-group">
+                    <label for="had_diarrhoea_recent">Recent Diarrhoea</label>
+                    <select id="had_diarrhoea_recent" name="had_diarrhoea_recent">
+                        <option value="">— Select —</option>
+                        <option value="1">Yes (last 2 weeks)</option>
+                        <option value="0">No</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-predict" id="btnPredict">
+                    <span class="spinner"></span>
+                    <span class="btn-text">🔬 Predict Stunting Risk</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Result Panel -->
+        <div class="result-panel">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">📊</span>
+                    Risk Assessment
+                </div>
+
+                <div id="resultEmpty" class="result-empty">
+                    <div class="empty-icon">🩺</div>
+                    <p>Fill in the child's details and click <strong>Predict</strong> to see the stunting risk assessment.</p>
+                    <p style="margin-top:0.75rem;font-size:0.78rem;">All fields are optional — missing values are imputed from training data medians.</p>
+                </div>
+
+                <div id="riskResult" class="risk-result">
+                    <div class="risk-gauge-container">
+                        <div class="risk-gauge">
+                            <svg viewBox="0 0 200 110">
+                                <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" />
+                                <path class="gauge-fill" id="gaugeFill" d="M 20 100 A 80 80 0 0 1 180 100"
+                                      stroke-dasharray="251.3"
+                                      stroke-dashoffset="251.3" />
+                            </svg>
+                        </div>
+                        <div class="risk-percentage" id="riskPct">0%</div>
+                        <div class="risk-label-text" id="riskLabel">—</div>
+                    </div>
+
+                    <div class="result-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Calibrated Probability</span>
+                            <span class="detail-value" id="detailProba">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Binary Prediction</span>
+                            <span class="detail-value" id="detailPred">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Model</span>
+                            <span class="detail-value" id="detailModel">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Confidence</span>
+                            <span class="detail-value" id="detailConf">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Endpoints -->
+            <div class="card" style="margin-top:1.5rem;">
+                <div class="card-title">
+                    <span class="icon">⚡</span>
+                    API Endpoints
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method method-get">GET</span>
+                    <span class="api-path">/health</span>
+                    <span class="api-desc">Health check</span>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method method-get">GET</span>
+                    <span class="api-path">/schema</span>
+                    <span class="api-desc">Feature schema</span>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method method-post">POST</span>
+                    <span class="api-path">/predict</span>
+                    <span class="api-desc">Single prediction</span>
+                </div>
+                <div class="api-endpoint">
+                    <span class="api-method method-post">POST</span>
+                    <span class="api-path">/predict/batch</span>
+                    <span class="api-desc">Batch predictions</span>
+                </div>
+                <div style="text-align:center;margin-top:1rem;">
+                    <a href="/docs" style="color:var(--accent-light);font-size:0.82rem;text-decoration:none;">
+                        Open Swagger UI →
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>DSA 8401 — Applied Machine Learning Capstone · MSc Data Science & Analytics</p>
+        <p style="margin-top:0.25rem;">iLabAfrica · Strathmore University · Kenya 2022 DHS Data</p>
+    </footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // ── Counties ────────────────────────────────────────────────────────
+    const COUNTIES = [
+        "Baringo","Bomet","Bungoma","Busia","Elgeyo-Marakwet","Embu","Garissa",
+        "Homa Bay","Isiolo","Kajiado","Kakamega","Kericho","Kiambu","Kilifi",
+        "Kirinyaga","Kisii","Kisumu","Kitui","Kwale","Laikipia","Lamu","Machakos",
+        "Makueni","Mandera","Marsabit","Meru","Migori","Mombasa","Murang'a",
+        "Nairobi","Nakuru","Nandi","Narok","Nyamira","Nyandarua","Nyeri","Samburu",
+        "Siaya","Taita Taveta","Tana River","Tharaka-Nithi","Trans Nzoia","Turkana",
+        "Uasin Gishu","Vihiga","Wajir","West Pokot"
+    ];
+
+    // Populate county dropdown
+    const countySelect = document.getElementById('county');
+    COUNTIES.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        countySelect.appendChild(opt);
+    });
+
+    // ── Form Submission ─────────────────────────────────────────────────
+    const form = document.getElementById('predictionForm');
+    const btn = document.getElementById('btnPredict');
+    const resultEmpty = document.getElementById('resultEmpty');
+    const riskResult = document.getElementById('riskResult');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        btn.classList.add('loading');
+        btn.disabled = true;
+
+        const formData = new FormData(form);
+        const payload = {};
+
+        // Only include non-empty fields
+        for (const [key, value] of formData.entries()) {
+            if (value !== '' && value !== null) {
+                // Convert numeric-like values
+                const numFields = [
+                    'child_age_months','birth_order','birth_weight_kg','bw_measured',
+                    'mother_age','mother_education_years','mother_height_cm','mother_bmi',
+                    'bmi_measured','time_to_water_min','altitude_m','improved_water',
+                    'improved_sanitation','has_electricity','currently_breastfed',
+                    'months_breastfed','preceding_birth_interval_m','short_birth_interval',
+                    'had_diarrhoea_recent','birth_size','caesarean'
+                ];
+                if (numFields.includes(key)) {
+                    payload[key] = parseFloat(value);
+                } else {
+                    payload[key] = value;
+                }
+            }
+        }
+
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.detail || 'Prediction failed');
+            }
+
+            const data = await response.json();
+            displayResult(data);
+
+        } catch (err) {
+            showToast('⚠️ ' + err.message);
+        } finally {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }
+    });
+
+    // ── Display Result ──────────────────────────────────────────────────
+    function displayResult(data) {
+        resultEmpty.style.display = 'none';
+        riskResult.classList.add('visible');
+
+        const pct = Math.round(data.stunting_risk * 100);
+        const riskClass = data.risk_label.includes('High') ? 'risk-high'
+                        : data.risk_label.includes('Moderate') ? 'risk-moderate'
+                        : 'risk-low';
+
+        // Remove old risk classes
+        riskResult.classList.remove('risk-low', 'risk-moderate', 'risk-high');
+        riskResult.classList.add(riskClass);
+
+        // Animate gauge
+        const gaugeFill = document.getElementById('gaugeFill');
+        const totalLen = 251.3;
+        const offset = totalLen * (1 - data.stunting_risk);
+        gaugeFill.style.strokeDashoffset = offset;
+
+        // Animate percentage counter
+        animateCounter('riskPct', pct, '%');
+
+        document.getElementById('riskLabel').textContent = data.risk_label;
+        document.getElementById('detailProba').textContent = data.stunting_risk.toFixed(4);
+        document.getElementById('detailPred').textContent = data.prediction === 1 ? 'Stunted' : 'Not Stunted';
+        document.getElementById('detailModel').textContent = data.model_name;
+
+        // Confidence = distance from 0.5 decision boundary
+        const conf = Math.abs(data.stunting_risk - 0.5) * 2 * 100;
+        document.getElementById('detailConf').textContent = conf.toFixed(0) + '%';
+    }
+
+    function animateCounter(id, target, suffix) {
+        const el = document.getElementById(id);
+        let current = 0;
+        const step = target / 40;
+        const interval = setInterval(() => {
+            current += step;
+            if (current >= target) {
+                current = target;
+                clearInterval(interval);
+            }
+            el.textContent = Math.round(current) + suffix;
+        }, 25);
+    }
+
+    // ── Toast ───────────────────────────────────────────────────────────
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('visible');
+        setTimeout(() => toast.classList.remove('visible'), 4000);
+    }
+</script>
+
+</body>
+</html>

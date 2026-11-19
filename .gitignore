@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large data files (uncomment if data shouldn't be tracked)
+# *.csv
+
+# Model artifacts (uncomment if models should be retrained, not tracked)
+# models/*.joblib

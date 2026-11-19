@@ -1,0 +1,26 @@
+# ─────────────────────────────────────────────────────────────────────────
+#  DHS Stunting Risk — Docker Compose
+#  DSA 8401 Applied Machine Learning Capstone
+# ─────────────────────────────────────────────────────────────────────────
+version: "3.9"
+
+services:
+  stunting-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stunting-risk-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount models directory for easy model updates without rebuilding
+      - ./models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped

@@ -1,0 +1,15 @@
+# ─────────────────────────────────────────────────────────────────────────
+#  Render.com Blueprint — DHS Stunting Risk API
+#  https://render.com/docs/blueprint-spec
+# ─────────────────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: stunting-risk-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    healthCheckPath: /health
