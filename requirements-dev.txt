@@ -1,0 +1,20 @@
+# ─────────────────────────────────────────────────────────────────────────
+#  DHS Stunting Risk — Development, Notebook & Visualization Dependencies
+#  DSA 8401 Applied Machine Learning Capstone
+# ─────────────────────────────────────────────────────────────────────────
+
+-r requirements.txt
+
+# Visualisation & GIS
+matplotlib>=3.7
+seaborn>=0.12
+plotly>=5.0
+folium>=0.14
+
+# Explainability & Econometrics
+shap>=0.42
+statsmodels>=0.14
+scipy>=1.11
+
+# Alternative ML models for experimentation
+xgboost>=2.0
