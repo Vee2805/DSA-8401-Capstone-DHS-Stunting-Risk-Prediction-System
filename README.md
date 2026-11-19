@@ -1,7 +1,8 @@
 # DHS Stunting Risk Prediction System
 
 **DSA 8401 — Applied Machine Learning Capstone Project**
-*MSc Data Science & Analytics · iLabAfrica · Strathmore University*
+*MSc Data Science & Analytics · iLabAfrica · Strathmore University*  
+**Author:** Daniel Vaati Mutheu · **Admission No:** 221570
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7?style=for-the-badge&logo=render)](https://stunting-risk-api.onrender.com/)
 [![Swagger Docs](https://img.shields.io/badge/API%20Docs-Swagger%20UI-85EA2D?style=for-the-badge&logo=swagger)](https://stunting-risk-api.onrender.com/docs)

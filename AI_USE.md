@@ -1,6 +1,7 @@
 # AI Assistance Disclosure
 
-**DSA 8401 — Applied Machine Learning Capstone**
+**DSA 8401 — Applied Machine Learning Capstone**  
+**Student:** Daniel Vaati Mutheu · **Admission No:** 221570  
 *Per course policy, this document discloses all AI tool usage during the project.*
 
 ---
